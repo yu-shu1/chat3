@@ -131,18 +131,18 @@ async function saveData() { try { await localforage.setItem(STORAGE_KEY, boardDa
 
 // --- 核心：绝对时间锚点引擎 ---
 function checkStatus() {
-  const now = Date.now();
-  //let needRefreshList = false;
-  const processReplies = (threads) => {
+    const now = Date.now();
+    //let needRefreshList = false;
+    const processReplies = (threads) => {
     threads.forEach(thread => {
-      if (!thread.expectedReplyTime && thread.replies.length > 0) {
-        const last = thread.replies[thread.replies.length - 1];
-        if (last.sender === 'me') {
-          thread.expectedReplyTime = last.timestamp + ((6 + Math.random() * 6) * 3600 * 1000);
-          saveData();
+        if (!thread.expectedReplyTime && thread.replies.length > 0) {
+            const last = thread.replies[thread.replies.length - 1];
+            if (last.sender === 'me') {
+                thread.expectedReplyTime = last.timestamp + ((6 + Math.random() * 6) * 3600 * 1000);
+                saveData();
           
+            }
         }
-      }
       if (thread.expectedReplyTime && now >= thread.expectedReplyTime) {
         const myLastReply = [...thread.replies].reverse().find(r => r.sender === 'me');
         const reply = generatePartnerReply();
@@ -157,38 +157,43 @@ function checkStatus() {
   };
     processReplies(boardData.myThreads);
     processReplies(boardData.partnerThreads);
-  //if (needRefreshList && document.getElementById('envelope-board-modal')?.style.display === 'flex') switchTab(currentView);
-      if (boardData.settings.autoPostEnabled && (typeof settings === 'undefined' || settings.boardPartnerWriteEnabled)) {
+    //if (needRefreshList && document.getElementById('envelope-board-modal')?.style.display === 'flex') switchTab(currentView);
+    // boards.js checkStatus 函数中，完整替换主动留言部分：
+    if (typeof settings !== 'undefined' && settings.boardPartnerWriteEnabled) {
+        boardData.settings.autoPostEnabled = true;
         if (!boardData.settings.nextAutoPostTime || now >= boardData.settings.nextAutoPostTime) {
-          boardData.settings.nextAutoPostTime = now + (4 * 3600 * 1000);
-          saveData();
-          
-          console.log("[主动留言] 骰子掷出..."); // 加这句
-          if (Math.random() < 0.2) {
-            const reply = generatePartnerReply();
-            console.log("[主动留言] 生成结果:", reply ? "成功" : "被拦截(null)"); // 加这句
-            if (reply) {
-              //boardData.partnerThreads.push({ id: genId(), starter: 'partner', createdAt: now, replies: reply });
-              boardData.partnerThreads.push({ id: genId(), starter: 'partner', createdAt: now, replies: reply, unread: true });
-              // --- 新增：提示逻辑 ---
-              // 2. 页面内轻提示（你正看网页时能看到的）
-              if (typeof showNotification === 'function') {
-                const partnerName = (typeof settings !== 'undefined' && settings.partnerName) || '对方';
-                showNotification(partnerName + '在留言板写了新内容', 'info', 2000);
-              }
-              // 3. 切到后台时的系统通知
-              if (typeof window._sendPartnerNotification === 'function') {
-                const partnerName = (typeof settings !== 'undefined' && settings.partnerName) || '对方';
-                window._sendPartnerNotification('留言板新动态', partnerName + '给你留了言');
-              }
-              // --- 提示逻辑结束 ---
-
-              saveData();
-              if (currentView === 'partner') switchTab('partner');
+            boardData.settings.nextAutoPostTime = now + ((4 + Math.random() * 2) * 3600 * 1000);
+            saveData();
+            
+            if (Math.random() < 0.2) {
+                const reply = generatePartnerReply();
+                if (reply) {
+                    boardData.partnerThreads.push({ 
+                        id: genId(), 
+                        starter: 'partner', 
+                        createdAt: now, 
+                        replies: reply, 
+                        unread: true 
+                    });
+                    // 页面内轻提示
+                    if (typeof showNotification === 'function') {
+                        const partnerName = (typeof settings !== 'undefined' && settings.partnerName) || '对方';
+                        showNotification(partnerName + '在留言板写了新内容 ✦', 'info', 3000);
+                    }
+                    // 系统通知
+                    if (typeof window._sendPartnerNotification === 'function') {
+                        const partnerName = (typeof settings !== 'undefined' && settings.partnerName) || '对方';
+                        window._sendPartnerNotification('留言板新动态', partnerName + '给你留了言');
+                    }
+                    // 播放提示音
+                    if (typeof playSound === 'function') playSound('message');
+    
+                    saveData();
+                    if (currentView === 'partner') switchTab('partner');
+                }
             }
-          }
         }
-      }
+    }  
 
 }
 
