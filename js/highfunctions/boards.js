@@ -460,9 +460,10 @@ function switchTab(type) {
       // 自己绑定点击事件，不再依赖 HTML 的 onclick
       listBody.querySelectorAll('[data-thread-id]').forEach(card => {
       card.onclick = () => {
-            openDetail(tid, currentView);
-        };
-      });
+        const tid = card.dataset.threadId;   // 从卡片元素获取 ID
+        openDetail(tid, currentView);
+      };
+    });
     }
 
     // --- 底部按钮 ---
