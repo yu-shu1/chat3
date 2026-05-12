@@ -521,6 +521,13 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
     if (autoToggle) autoToggle.classList.toggle('active', !!settings.autoSendEnabled);
     updateAutoSendUI();
     updateDelayUI();
+    // 在 listeners.js 的 _chatSettingsEl 点击处理中，updateAutoSendUI() 调用之后添加：
+
+    // 留言板主动留言开关状态同步
+    const boardAutoPostToggle = document.getElementById('board-auto-post-toggle');
+    if (boardAutoPostToggle) {
+        boardAutoPostToggle.classList.toggle('active', !!settings.boardPartnerWriteEnabled);
+    }
     const immToggle = document.getElementById('immersive-toggle');
     if (immToggle) immToggle.classList.toggle('active', document.body.classList.contains('immersive-mode'));
     const rrStyle = settings.readReceiptStyle || 'icon';
@@ -1326,6 +1333,35 @@ autoSendToggle.addEventListener('click', () => {
     throttledSaveData();
     showNotification(`主动发送已${settings.autoSendEnabled ? '开启' : '关闭'}`, 'success');
 });
+
+// 在 listeners.js 中，autoSendToggle.addEventListener 附近添加：
+
+// 留言板主动留言开关
+const boardAutoPostToggleEl = document.getElementById('board-auto-post-toggle');
+if (boardAutoPostToggleEl) {
+    boardAutoPostToggleEl.addEventListener('click', () => {
+        settings.boardPartnerWriteEnabled = !settings.boardPartnerWriteEnabled;
+        boardAutoPostToggleEl.classList.toggle('active', settings.boardPartnerWriteEnabled);
+        // 同步 boards.js 中的设置
+        if (window.boardDataV2 && window.boardDataV2.settings) {
+            window.boardDataV2.settings.autoPostEnabled = settings.boardPartnerWriteEnabled;
+            if (settings.boardPartnerWriteEnabled) {
+                // 开启时立即设置下次检查时间（4~6小时后）
+                window.boardDataV2.settings.nextAutoPostTime = Date.now() + ((4 + Math.random() * 2) * 3600 * 1000);
+                if (typeof window.setBoardDataV2 === 'function') {
+                    window.setBoardDataV2(window.boardDataV2);
+                }
+            }
+        }
+        throttledSaveData();
+        showNotification(
+            settings.boardPartnerWriteEnabled 
+                ? '留言板主动留言已开启 ✦' 
+                : '留言板主动留言已关闭', 
+            'success'
+        );
+    });
+}
 
 autoSendSlider.value = settings.autoSendInterval || 5;
 autoSendValue.textContent = `${settings.autoSendInterval || 5}分钟`;

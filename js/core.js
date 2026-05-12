@@ -171,6 +171,8 @@ function loadMoreHistory() {
                 partnerAvatarShape: 'circle',
                 autoSendEnabled: false,
                 autoSendInterval: 5,
+                // 在 core.js 的 getDefaultSettings() 返回对象中，autoSendInterval: 5, 之后添加：
+                boardPartnerWriteEnabled: false,  // 留言板主动留言：对方定时随机在留言板写新内容
                 allowReadNoReply: false, 
                 readNoReplyChance: 0.2,
                 timeFormat: 'HH:mm',
