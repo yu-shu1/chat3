@@ -1685,39 +1685,18 @@ if (!isBatchMode && type === 'normal') {
                 : [];
         
             // ========== 字卡组合模式（开启时混合单条与组合） ==========
-            if (settings.phraseCombiningEnabled) {
+            // 当组合模式开启时，有概率触发组合，否则回退到逐条模式
+            if (settings.phraseCombiningEnabled && Math.random() < 0.3) {
                 showTypingIndicator();
-            
-                const useCombine = Math.random() < 0.2;  // 可自行调整比例
-                let finalText = '';
-                let selected = [];
-            
-                if (useCombine) {
-                    // 组合模式：随机选取 1~3 条不重复的字卡
-                    const combineCount = Math.floor(Math.random() * 3) + 1; // 1-3
-                    // 打乱池子并取前 combineCount 条（不重复）
-                    const shuffled = [...replyPoolOnce];
-                    for (let i = shuffled.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-                    }
-                    selected = shuffled.slice(0, combineCount);
-                    let combinedText = selected.join('。');
-                    // 随机将最后一个句号改为感叹号或波浪号
-                    if (combinedText.length > 0 && combinedText.slice(-1) === '。') {
-                        const r = Math.random();
-                        if (r < 0.3) combinedText = combinedText.slice(0, -1) + '！';
-                        else if (r < 0.5) combinedText = combinedText.slice(0, -1) + '～';
-                    }
-                    finalText = combinedText;
-                } else {
-                    // 单条模式：随机取一条字卡
-                    const picked = replyPoolOnce[Math.floor(Math.random() * replyPoolOnce.length)];
-                    if (!picked) return;
-                    finalText = String(picked).trim();
+                const combineCount = Math.floor(Math.random() * 2) + 2; // 2~3条
+                const shuffled = [...replyPoolOnce].sort(() => Math.random() - 0.5);
+                const selected = shuffled.slice(0, combineCount);
+                let combinedText = selected.join('，');
+                if (combinedText.slice(-1) === '，') {
+                    combinedText = combinedText.slice(0, -1) + (Math.random() < 0.5 ? '！' : '。');
                 }
+                let finalText = combinedText;
             
-                // 表情混入处理（对单条或组合都生效）
                 let separateEmoji = null;
                 if (customEmojis && customEmojis.length > 0 && Math.random() < 0.2) {
                     const emoji = customEmojis[Math.floor(Math.random() * customEmojis.length)];
@@ -1728,12 +1707,10 @@ if (!isBatchMode && type === 'normal') {
                     }
                 }
             
-                // 引用回复（概率 0.3）
                 const quoted = (Math.random() < 0.3 && recentUserMsgs.length > 0)
                     ? (function() { const m = recentUserMsgs[Math.floor(Math.random() * recentUserMsgs.length)]; return { id: m.id, text: m.text, sender: m.sender }; })()
                     : null;
             
-                // 发送消息
                 addMessage({
                     id: Date.now(),
                     sender: settings.partnerName || '对方',
@@ -1750,7 +1727,6 @@ if (!isBatchMode && type === 'normal') {
                 }
                 playSound('message');
             
-                // 单独表情（如果未混入）
                 if (separateEmoji) {
                     setTimeout(() => {
                         addMessage({
@@ -1759,23 +1735,16 @@ if (!isBatchMode && type === 'normal') {
                             text: separateEmoji,
                             timestamp: new Date(),
                             status: 'received',
-                            favorited: false,
-                            note: null,
                             type: 'normal'
                         });
                         playSound('message');
                     }, 300 + Math.random() * 400);
                 }
             
-                // 贴纸（概率 0.2）
                 let disabledStickerItems = new Set();
-                try {
-                    const raw = localStorage.getItem('disabledStickerItems');
-                    if (raw) disabledStickerItems = new Set(JSON.parse(raw));
-                } catch (e) {}
+                try { const raw = localStorage.getItem('disabledStickerItems'); if (raw) disabledStickerItems = new Set(JSON.parse(raw)); } catch(e) {}
                 const enabledStickerPool = (stickerLibrary || []).filter(s => !disabledStickerItems.has(s));
-                const shouldSendSticker = enabledStickerPool.length > 0 && Math.random() < 0.2;
-                if (shouldSendSticker) {
+                if (enabledStickerPool.length > 0 && Math.random() < 0.2) {
                     const randomSticker = enabledStickerPool[Math.floor(Math.random() * enabledStickerPool.length)];
                     setTimeout(() => {
                         addMessage({
@@ -1785,8 +1754,6 @@ if (!isBatchMode && type === 'normal') {
                             timestamp: new Date(),
                             image: randomSticker,
                             status: 'received',
-                            favorited: false,
-                            note: null,
                             type: 'normal'
                         });
                         playSound('message');
@@ -1796,33 +1763,22 @@ if (!isBatchMode && type === 'normal') {
                     }, 400 + Math.random() * 600);
                 }
             
-                // 隐藏“正在输入”指示器
                 (function(){
-                    try {
-                        if (window._typingIndicatorAutoHideTimer) {
-                            clearTimeout(window._typingIndicatorAutoHideTimer);
-                            window._typingIndicatorAutoHideTimer = null;
-                        }
-                    } catch(e) {}
+                    try { if (window._typingIndicatorAutoHideTimer) { clearTimeout(window._typingIndicatorAutoHideTimer); window._typingIndicatorAutoHideTimer = null; } } catch(e) {}
                     var _tiW = document.getElementById('typing-indicator-wrapper');
                     if (_tiW) {
                         var _tiInner = _tiW.querySelector('.typing-indicator');
                         if (_tiInner) {
                             _tiInner.classList.add('hiding');
-                            setTimeout(function() {
-                                _tiW.style.display = 'none';
-                                if (_tiInner) _tiInner.classList.remove('hiding');
-                            }, 240);
-                        } else {
-                            _tiW.style.display = 'none';
-                        }
+                            setTimeout(function() { _tiW.style.display = 'none'; if (_tiInner) _tiInner.classList.remove('hiding'); }, 240);
+                        } else { _tiW.style.display = 'none'; }
                     }
                 })();
             
                 scheduleAutoSend();
                 return;
             }            
-        
+            
             // ========== 原有逐条回复模式（phraseCombiningEnabled === false） ==========
             const replyCount = Math.random() < 0.75 ? 1 : (Math.random() < 0.95 ? 2 : 3);
             showTypingIndicator();
