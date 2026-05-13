@@ -370,7 +370,6 @@ function switchTab(type) {
     if (!listBody) return;
 
     if (threads.length === 0) {
-        // 使用信封投递的空状态样式
         listBody.innerHTML = `
             <div class="env-empty" style="padding: 48px 20px;">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -383,35 +382,6 @@ function switchTab(type) {
                 <div style="font-size:12px;margin-top:6px;opacity:0.6;">${isMe ? '写下想说的话吧～' : '耐心等待，Ta可能会悄悄留言'}</div>
             </div>
         `;
-    } else {
-        listBody.innerHTML = threads.slice().reverse().map(t => {
-            const last = t.replies[t.replies.length - 1];
-            let statusText = '等待回复', statusClass = 'pending';
-            if (last && ((isMe && last.sender === 'partner') || (!isMe && last.sender === 'me'))) {
-                statusText = '已回复'; statusClass = 'replied';
-            }
-            const preview = t.replies[0] ? (t.replies[0].image ? '🖼 图片留言' : escapeHtml((t.replies[0].text || '').substring(0, 40))) : '';
-            const unreadStar = t.unread ? '<span style="position:absolute;top:12px;right:12px;font-size:14px;z-index:2;">✨</span>' : '';
-            return `<div class="board-card" data-thread-id="${t.id}" style="position:relative;cursor:pointer;">${unreadStar}<div class="board-card-top-line"></div><div class="board-card-body"><div class="board-card-preview">${preview}</div><div class="board-card-meta"><span class="board-card-date">${formatTime(t.createdAt)}</span><span class="board-card-status ${statusClass}">${statusText}</span></div></div></div>`;
-        }).join('');
-        listBody.querySelectorAll('[data-thread-id]').forEach(card => {
-            card.onclick = () => {
-                openDetail(card.dataset.threadId, currentView);
-            };
-        });
-    }
-
-    // 底部新建按钮显示控制
-    const newPostBtn = document.getElementById('board-new-post-btn');
-    if (newPostBtn) newPostBtn.style.display = isMe ? 'flex' : 'none';
-}
-
-    // --- 列表内容渲染 ---
-    const listBody = document.getElementById('board-list-body');
-    if (!listBody) return;
-
-    if (threads.length === 0) {
-        listBody.innerHTML = `<div class="board-empty"><i class="fas fa-sticky-note"></i><p>${isMe ? '还没有留言' : 'Ta还没有主动留言'}</p></div>`;
     } else {
         listBody.innerHTML = threads.slice().reverse().map(t => {
             const last = t.replies[t.replies.length - 1];
