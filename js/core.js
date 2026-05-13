@@ -310,7 +310,8 @@ const loadData = async () => {
             localforage.getItem(getStorageKey('myStickerLibrary')),
             localforage.getItem(getStorageKey('customReplyGroups')),
             localforage.getItem(getStorageKey('customPokeGroups')),
-            localforage.getItem(getStorageKey('customStatusGroups'))
+            localforage.getItem(getStorageKey('customStatusGroups')),
+            localforage.getItem(getStorageKey('customEmojiGroups')),
         ]);
         const getVal = (index) => results[index].status === 'fulfilled' ? results[index].value : null;
 
@@ -335,7 +336,11 @@ const loadData = async () => {
         const savedReplyGroups = getVal(18);
         const savedPokeGroups = getVal(19);
         const savedStatusGroups = getVal(20);
-
+        const savedEmojiGroups = getVal(21);   // 索引 21 对应 customEmojiGroups
+        
+        
+        if (savedEmojiGroups) window.customEmojiGroups = savedEmojiGroups;
+        
         if (savedPartnerPersonas) partnerPersonas = savedPartnerPersonas;
 
         if (savedSettings) Object.assign(settings, savedSettings);
@@ -583,6 +588,7 @@ const saveData = async () => {
         { key: 'customThemes',           val: () => localforage.setItem(`${APP_PREFIX}customThemes`, customThemes) },
         { key: 'themeSchemes',           val: () => localforage.setItem(`${APP_PREFIX}themeSchemes`, themeSchemes) },
         { key: 'chatMessages',           val: () => localforage.setItem(getStorageKey('chatMessages'), messages) },
+        { key: 'customEmojiGroups', val: () => localforage.setItem(getStorageKey('customEmojiGroups'), window.customEmojiGroups || []) }
     ];
 
     const partnerAvatarSrc = (() => {
@@ -1688,7 +1694,8 @@ if (!isBatchMode && type === 'normal') {
             // 当组合模式开启时，有概率触发组合，否则回退到逐条模式
             if (settings.phraseCombiningEnabled && Math.random() < 0.3) {
                 showTypingIndicator();
-                const combineCount = Math.floor(Math.random() * 2) + 2; // 2~3条
+                // 80% 概率取 2 条，20% 概率取 3 条
+                const combineCount = Math.random() < 0.8 ? 2 : 3;
                 const shuffled = [...replyPoolOnce].sort(() => Math.random() - 0.5);
                 const selected = shuffled.slice(0, combineCount);
                 let combinedText = selected.join('，');
