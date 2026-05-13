@@ -412,37 +412,74 @@ window.renderEnvelopeBoard = async function() {
 };
 
 function switchTab(type) {
-    // 🌟 终极极简版：彻底解绑！按钮永远显示，绝不拦截跳转！
-    // canAutoPost 只用来控制后台要不要偷偷生成新留言，跟界面显示一刀两断
-    const canAutoPost = typeof settings !== 'undefined' && settings.boardPartnerWriteEnabled;
-
     currentView = type;
     const isMe = type === 'me';
     const threads = isMe ? boardData.myThreads : boardData.partnerThreads;
     const myName = (typeof settings !== 'undefined' && settings.myName) || '我';
     const partnerName = (typeof settings !== 'undefined' && settings.partnerName) || '对方';
 
-    // --- 标签区 ---
+    // --- 渲染选项卡（使用信封投递同款样式）---
     const tabArea = document.getElementById('board-tab-area');
-    // 永远无条件渲染这两个按钮
-    tabArea.innerHTML = `
-    <div style="display:flex; gap:8px; align-items:center;">
-        <button class="board-tab-btn ${isMe ? 'active' : ''}" data-tab="me" style="padding:6px 14px; border-radius:20px; border:1px solid var(--border-color); background:${isMe ? 'var(--accent-color)' : 'transparent'}; color:${isMe ? '#fff' : 'var(--text-secondary)'}; font-size:12px; font-weight:600; cursor:pointer; position:relative;">
-            ${myName}${boardData.myThreads.some(t => t.unread) ? '<span style="position:absolute;top:-6px;right:-6px;font-size:14px;">✨</span>' : ''}
-        </button>
-        <button class="board-tab-btn ${!isMe ? 'active' : ''}" data-tab="partner" style="padding:6px 14px; border-radius:20px; border:1px solid var(--border-color); background:${!isMe ? 'var(--accent-color)' : 'transparent'}; color:${!isMe ? '#fff' : 'var(--text-secondary)'}; font-size:12px; font-weight:600; cursor:pointer; position:relative;">
-            ${partnerName}${boardData.partnerThreads.some(t => t.unread) ? '<span style="position:absolute;top:-6px;right:-6px;font-size:14px;">✨</span>' : ''}
-        </button>
-    </div>`;
-    /*tabArea.querySelectorAll('[data-tab]').forEach(btn => {
-        btn.onclick = () => switchTab(btn.dataset.tab);
-    });*/
-    tabArea.querySelectorAll('[data-tab]').forEach(btn => {
-        btn.onclick = () => {
-            switchTab(btn.dataset.tab);
-        };
-    });
+    if (tabArea) {
+        tabArea.innerHTML = `
+            <div style="display: flex; gap: 6px; width: 100%;">
+                <button class="env-tab-btn ${isMe ? 'active' : ''}" data-tab="me" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="4" width="20" height="16" rx="2"/>
+                        <path d="M22 7l-10 7L2 7"/>
+                    </svg>
+                    ${myName}
+                    ${boardData.myThreads.some(t => t.unread) ? '<span style="margin-left: 4px;">✨</span>' : ''}
+                </button>
+                <button class="env-tab-btn ${!isMe ? 'active' : ''}" data-tab="partner" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 13V19a2 2 0 01-2 2H4a2 2 0 01-2-2v-6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="21" y1="3" x2="10" y2="14"/>
+                    </svg>
+                    ${partnerName}
+                    ${boardData.partnerThreads.some(t => t.unread) ? '<span style="margin-left: 4px;">✨</span>' : ''}
+                </button>
+            </div>
+        `;
 
+        // 绑定点击事件
+        tabArea.querySelectorAll('[data-tab]').forEach(btn => {
+            btn.onclick = () => {
+                switchTab(btn.dataset.tab);
+            };
+        });
+    }
+
+    // --- 列表内容保持不变 ---
+    const listBody = document.getElementById('board-list-body');
+    const listFooter = document.getElementById('board-list-footer');
+    if (!listBody) return;
+
+    if (threads.length === 0) {
+        listBody.innerHTML = `<div class="board-empty"><i class="fas fa-sticky-note"></i><p>${isMe ? '还没有留言' : 'Ta还没有主动留言'}</p></div>`;
+    } else {
+        listBody.innerHTML = threads.slice().reverse().map(t => {
+            const last = t.replies[t.replies.length - 1];
+            let statusText = '等待回复', statusClass = 'pending';
+            if (last && ((isMe && last.sender === 'partner') || (!isMe && last.sender === 'me'))) {
+                statusText = '已回复'; statusClass = 'replied';
+            }
+            const preview = t.replies[0] ? (t.replies[0].image ? '🖼 图片留言' : escapeHtml((t.replies[0].text || '').substring(0, 40))) : '';
+            const unreadStar = t.unread ? '<span style="position:absolute;top:12px;right:12px;font-size:14px;z-index:2;">✨</span>' : '';
+            return `<div class="board-card" data-thread-id="${t.id}" style="position:relative;cursor:pointer;">${unreadStar}<div class="board-card-top-line"></div><div class="board-card-body"><div class="board-card-preview">${preview}</div><div class="board-card-meta"><span class="board-card-date">${formatTime(t.createdAt)}</span><span class="board-card-status ${statusClass}">${statusText}</span></div></div></div>`;
+        }).join('');
+        listBody.querySelectorAll('[data-thread-id]').forEach(card => {
+            card.onclick = () => {
+                openDetail(card.dataset.threadId, currentView);
+            };
+        });
+    }
+
+    // 底部新建按钮显示控制
+    const newPostBtn = document.getElementById('board-new-post-btn');
+    if (newPostBtn) newPostBtn.style.display = isMe ? 'flex' : 'none';
+}
 
   // --- 列表内容 ---
     const listBody = document.getElementById('board-list-body');
