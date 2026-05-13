@@ -445,28 +445,39 @@
 </div>
 
 <!-- 留言板列表 -->
+<!-- 留言板 · 信封风格弹窗 -->
 <div id="envelope-board-modal" class="modal">
-    <div class="modal-content" id="board-v2-list-container">
-        <div class="board-wrapper">
-            <div class="board-header" style="justify-content: space-between; align-items: center;">
-                <div style="display:flex; align-items:center; gap:6px; flex-shrink: 0;">
-                    <i class="fas fa-thumbtack" style="font-size: 14px; color: var(--accent-color);"></i>
-                    <span style="font-weight: 600; font-size: 15px;">留言板</span>
-                </div>
-                <div id="board-tab-area"></div>
-                <div style="display:flex; align-items:center; gap:10px; flex-shrink: 0;">
-                    <button class="board-close-btn" id="board-list-close-btn"><i class="fas fa-times"></i></button>
-                </div>
+    <div class="modal-content" style="max-height:92vh; padding:0; overflow:hidden; background:transparent;">
+        <div class="env-wrapper">
+            <!-- 信封头部封口区域（与信封投递完全一致） -->
+            <div class="env-header-flap">
+                <svg class="env-header-icon" width="40" height="30" viewBox="0 0 40 30" fill="none">
+                    <rect x="1" y="7" width="38" height="22" rx="3" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+                    <path d="M1 9 L20 20 L39 9" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" fill="none"/>
+                    <path d="M1 29 L14 18" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+                    <path d="M39 29 L26 18" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+                </svg>
+                <div class="env-header-title">留 言 板</div>
+                <div class="env-header-subtitle">Messages · Wishes</div>
             </div>
-            <div class="board-body" id="board-list-body" style="padding: 14px 16px;"></div>
-            <div class="board-footer" id="board-list-footer">
-                <div class="modal-buttons">
-                    <button class="modal-btn modal-btn-secondary" id="back-advanced" onclick="(function(){hideModal(document.getElementById('envelope-board-modal'));showModal(document.getElementById('advanced-modal'))})()">
-                        <i class="fas fa-arrow-left"></i> 返回
-                    </button>
-                    <button class="modal-btn modal-btn-primary" id="board-new-post-btn" style="flex: 1; justify-content:center;"><i class="fas fa-plus"></i> 写新留言</button>
-                    <button class="modal-btn modal-btn-secondary" id="close-custom-replies">关闭</button>
-                </div>
+
+            <!-- 主体内容区（保留所有原有用ID，确保JS正常操作） -->
+            <div class="env-body" style="padding: 14px 18px 4px;">
+                <!-- 动态选项卡区域 -->
+                <div id="board-tab-area" class="env-tab-bar" style="margin-bottom: 14px;"></div>
+                <!-- 留言列表容器 -->
+                <div id="board-list-body" style="flex:1; overflow-y: auto; min-height: 200px; max-height: 45vh;"></div>
+            </div>
+
+            <!-- 底部操作栏（风格与信封投递保持一致） -->
+            <div class="env-send-area" id="board-main-close-btn">
+                <button class="env-write-btn" id="board-new-post-btn" style="background: var(--accent-color);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                    写新留言
+                </button>
+                <button class="env-close-btn" id="board-list-close-btn">关闭</button>
             </div>
         </div>
     </div>
