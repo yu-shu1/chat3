@@ -327,6 +327,7 @@ window.renderEnvelopeBoard = async function() {
 };
 
 // ========== 核心：选项卡切换 + 列表渲染（信封风格） ==========
+// ========== 替换 switchTab 函数 ==========
 function switchTab(type) {
     currentView = type;
     const isMe = type === 'me';
@@ -334,55 +335,51 @@ function switchTab(type) {
     const myName = (typeof settings !== 'undefined' && settings.myName) || '我';
     const partnerName = (typeof settings !== 'undefined' && settings.partnerName) || '对方';
 
-    // 渲染选项卡（信封投递同款样式）
+    // ---------- 渲染新样式选项卡 ----------
     const tabArea = document.getElementById('board-tab-area');
     if (tabArea) {
         tabArea.innerHTML = `
-            <div style="display: flex; gap: 6px; width: 100%;">
-                <button class="env-tab-btn ${isMe ? 'active' : ''}" data-tab="me" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="4" width="20" height="16" rx="2"/>
-                        <path d="M22 7l-10 7L2 7"/>
-                    </svg>
-                    ${myName}
-                    ${boardData.myThreads.some(t => t.unread) ? '<span style="margin-left: 4px;">✨</span>' : ''}
-                </button>
-                <button class="env-tab-btn ${!isMe ? 'active' : ''}" data-tab="partner" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 13V19a2 2 0 01-2 2H4a2 2 0 01-2-2v-6"/>
-                        <polyline points="15 3 21 3 21 9"/>
-                        <line x1="21" y1="3" x2="10" y2="14"/>
-                    </svg>
-                    ${partnerName}
-                    ${boardData.partnerThreads.some(t => t.unread) ? '<span style="margin-left: 4px;">✨</span>' : ''}
-                </button>
+            <div class="board-tabs">
+                <div class="board-tab ${isMe ? 'active' : ''}" data-tab="me">
+                    <i class="fas fa-pen-fancy"></i>
+                    <span>${myName}的留言</span>
+                    ${boardData.myThreads.some(t => t.unread) ? '<span class="unread-dot"></span>' : ''}
+                </div>
+                <div class="board-tab ${!isMe ? 'active' : ''}" data-tab="partner">
+                    <i class="fas fa-envelope-open-text"></i>
+                    <span>${partnerName}的留言</span>
+                    ${boardData.partnerThreads.some(t => t.unread) ? '<span class="unread-dot"></span>' : ''}
+                </div>
             </div>
         `;
-        tabArea.querySelectorAll('[data-tab]').forEach(btn => {
-            btn.onclick = () => {
+        // 绑定点击事件
+        tabArea.querySelectorAll('.board-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.tab === type) return;
                 switchTab(btn.dataset.tab);
-            };
+            });
         });
     }
 
-    // 列表内容渲染（空状态改为信封风格）
+    // ---------- 列表内容渲染 ----------
     const listBody = document.getElementById('board-list-body');
     if (!listBody) return;
 
+    // 空状态 ✨ 全新设计
     if (threads.length === 0) {
+        const emptyIcon = isMe ? '✍️' : '💌';
+        const emptyTitle = isMe ? '还没有留言' : 'Ta还没有留言';
+        const emptyDesc = isMe ? '写点想说的话，对方会在这里看到～' : '耐心等待，Ta可能会悄悄留些文字';
         listBody.innerHTML = `
-            <div class="env-empty" style="padding: 48px 20px;">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-                    <rect x="2" y="4" width="20" height="16" rx="2"/>
-                    <path d="M22 7l-10 7L2 7"/>
-                    <polyline points="22 13 12 13"/>
-                    <path d="M19 16l-5-3-5 3"/>
-                </svg>
-                <div style="font-size:14px;font-weight:500;margin-top:4px;">${isMe ? '还没有留言' : 'Ta还没有主动留言'}</div>
-                <div style="font-size:12px;margin-top:6px;opacity:0.6;">${isMe ? '写下想说的话吧～' : '耐心等待，Ta可能会悄悄留言'}</div>
+            <div class="board-empty-state">
+                <div class="board-empty-icon">${emptyIcon}</div>
+                <div class="board-empty-title">${emptyTitle}</div>
+                <div class="board-empty-desc">${emptyDesc}</div>
             </div>
         `;
-    } else {
+    } 
+    // 有数据时保持原有卡片样式（也可微调，但保留原功能）
+    else {
         listBody.innerHTML = threads.slice().reverse().map(t => {
             const last = t.replies[t.replies.length - 1];
             let statusText = '等待回复', statusClass = 'pending';
@@ -393,10 +390,9 @@ function switchTab(type) {
             const unreadStar = t.unread ? '<span style="position:absolute;top:12px;right:12px;font-size:14px;z-index:2;">✨</span>' : '';
             return `<div class="board-card" data-thread-id="${t.id}" style="position:relative;cursor:pointer;">${unreadStar}<div class="board-card-top-line"></div><div class="board-card-body"><div class="board-card-preview">${preview}</div><div class="board-card-meta"><span class="board-card-date">${formatTime(t.createdAt)}</span><span class="board-card-status ${statusClass}">${statusText}</span></div></div></div>`;
         }).join('');
+        // 绑定卡片点击打开详情
         listBody.querySelectorAll('[data-thread-id]').forEach(card => {
-            card.onclick = () => {
-                openDetail(card.dataset.threadId, currentView);
-            };
+            card.onclick = () => openDetail(card.dataset.threadId, currentView);
         });
     }
 
@@ -444,13 +440,6 @@ function openDetail(threadId, type) {
         const isLast = idx === thread.replies.length - 1;
         const nextIsPartner = thread.replies[idx + 1]?.sender === 'partner';
 
-        if (!isMe && isLast && r.sender === 'partner' && r.liked) {
-            bodyHtml += `<div class="board-system-hint">${myName} 赞了 ${partnerName} 的留言</div>`;
-        } else if (!isMe && !isLast && r.sender === 'partner' && r.liked && thread.replies[idx + 1]?.sender === 'me') {
-            bodyHtml += `<div class="board-system-hint">${myName} 赞了 ${partnerName} 的留言</div>`;
-        } else if (r.sender === 'me' && r.liked && nextIsPartner) {
-            bodyHtml += `<div class="board-system-hint">${partnerName} 赞了 ${myName} 的留言</div>`;
-        }
     });
 
     const last = thread.replies[thread.replies.length - 1];
