@@ -11180,6 +11180,86 @@
   background: var(--border-color);
 }
 
+/* ========= 留言板 V2 新样式 ========= */
+.board-tabs {
+    display: flex;
+    gap: 12px;
+    background: transparent;
+    padding: 4px;
+    border-radius: 40px;
+    width: 100%;
+    justify-content: center;
+}
+.board-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 40px;
+    background: var(--primary-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    backdrop-filter: blur(2px);
+}
+.board-tab i {
+    font-size: 14px;
+    opacity: 0.7;
+}
+.board-tab.active {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 12px rgba(var(--accent-color-rgb), 0.25);
+}
+.board-tab.active i {
+    opacity: 1;
+}
+.board-tab:hover:not(.active) {
+    background: rgba(var(--accent-color-rgb), 0.08);
+    border-color: rgba(var(--accent-color-rgb), 0.3);
+    color: var(--text-primary);
+}
+
+/* 空状态卡片 */
+.board-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    background: linear-gradient(145deg, var(--secondary-bg), var(--primary-bg));
+    border-radius: 32px;
+    border: 1px solid var(--border-color);
+    margin: 16px 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+}
+.board-empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.6;
+    color: var(--accent-color);
+}
+.board-empty-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+.board-empty-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    max-width: 220px;
+    line-height: 1.5;
+}
+
 /* ===== 留言板详情页 ===== */
 
 #board-detail-modal .modal-content {
@@ -11544,4 +11624,17 @@
     z-index: 2000 !important;
     align-items: center !important;
     justify-content: center !important;
+}
+.board-tab {
+    position: relative;
+}
+.unread-dot {
+    position: absolute;
+    top: 6px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    background-color: #ff4757;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--primary-bg);
 }
