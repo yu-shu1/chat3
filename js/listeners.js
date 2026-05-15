@@ -521,13 +521,6 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
     if (autoToggle) autoToggle.classList.toggle('active', !!settings.autoSendEnabled);
     updateAutoSendUI();
     updateDelayUI();
-    // 在 listeners.js 的 _chatSettingsEl 点击处理中，updateAutoSendUI() 调用之后添加：
-
-    // 留言板主动留言开关状态同步
-    const boardAutoPostToggle = document.getElementById('board-auto-post-toggle');
-    if (boardAutoPostToggle) {
-        boardAutoPostToggle.classList.toggle('active', !!settings.boardPartnerWriteEnabled);
-    }
     const immToggle = document.getElementById('immersive-toggle');
     if (immToggle) immToggle.classList.toggle('active', document.body.classList.contains('immersive-mode'));
     const rrStyle = settings.readReceiptStyle || 'icon';
@@ -1334,35 +1327,6 @@ autoSendToggle.addEventListener('click', () => {
     showNotification(`主动发送已${settings.autoSendEnabled ? '开启' : '关闭'}`, 'success');
 });
 
-// 在 listeners.js 中，autoSendToggle.addEventListener 附近添加：
-
-// 留言板主动留言开关
-const boardAutoPostToggleEl = document.getElementById('board-auto-post-toggle');
-if (boardAutoPostToggleEl) {
-    boardAutoPostToggleEl.addEventListener('click', () => {
-        settings.boardPartnerWriteEnabled = !settings.boardPartnerWriteEnabled;
-        boardAutoPostToggleEl.classList.toggle('active', settings.boardPartnerWriteEnabled);
-        // 同步 boards.js 中的设置
-        if (window.boardDataV2 && window.boardDataV2.settings) {
-            window.boardDataV2.settings.autoPostEnabled = settings.boardPartnerWriteEnabled;
-            if (settings.boardPartnerWriteEnabled) {
-                // 开启时立即设置下次检查时间（4~6小时后）
-                window.boardDataV2.settings.nextAutoPostTime = Date.now() + ((4 + Math.random() * 2) * 3600 * 1000);
-                if (typeof window.setBoardDataV2 === 'function') {
-                    window.setBoardDataV2(window.boardDataV2);
-                }
-            }
-        }
-        throttledSaveData();
-        showNotification(
-            settings.boardPartnerWriteEnabled 
-                ? '留言板主动留言已开启 ✦' 
-                : '留言板主动留言已关闭', 
-            'success'
-        );
-    });
-}
-
 autoSendSlider.value = settings.autoSendInterval || 5;
 autoSendValue.textContent = `${settings.autoSendInterval || 5}分钟`;
 
@@ -1404,16 +1368,16 @@ autoSendSlider.addEventListener('change', () => {
             if (_closeLenormandEl) _closeLenormandEl.addEventListener('click', () => {
                 hideModal(document.getElementById('fortune-lenormand-modal'));
             });
+            
             const envelopeEntryBtn = document.getElementById('envelope-function');
             if (envelopeEntryBtn) {
                 envelopeEntryBtn.addEventListener('click', async () => {
                     hideModal(DOMElements.advancedModal.modal);
-                    // 直接调用新版接口，它会自动加载数据并检测回复
-                    if (typeof renderEnvelopeBoard === 'function') {
-                        renderEnvelopeBoard();
-                        showModal(document.getElementById('envelope-board-modal'));
+                    if (typeof window.renderEnvelopeBoard === 'function') {
+                        await window.renderEnvelopeBoard();  // 新版留言板
                     } else {
-                        showNotification('留言板初始化失败', 'error');
+                        console.error('boards.js 未正确加载');
+                        showNotification('留言板功能加载失败', 'error');
                     }
                 });
             }
@@ -1429,10 +1393,6 @@ autoSendSlider.addEventListener('change', () => {
             const _sendEnvEl = document.getElementById('send-envelope');
             if (_sendEnvEl) _sendEnvEl.addEventListener('click', handleSendEnvelope);
             
-            const _cancelEnvEl = document.getElementById('cancel-envelope');
-            if (_cancelEnvEl) _cancelEnvEl.addEventListener('click', () => {
-                hideModal(document.getElementById('envelope-modal'));
-            });
             const closeFortune = document.getElementById('close-fortune');
             if (closeFortune) {
                 closeFortune.addEventListener('click', () => {

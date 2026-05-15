@@ -171,8 +171,6 @@ function loadMoreHistory() {
                 partnerAvatarShape: 'circle',
                 autoSendEnabled: false,
                 autoSendInterval: 5,
-                // 在 core.js 的 getDefaultSettings() 返回对象中，autoSendInterval: 5, 之后添加：
-                boardPartnerWriteEnabled: false,  // 留言板主动留言：对方定时随机在留言板写新内容
                 allowReadNoReply: false, 
                 readNoReplyChance: 0.2,
                 timeFormat: 'HH:mm',
@@ -310,8 +308,7 @@ const loadData = async () => {
             localforage.getItem(getStorageKey('myStickerLibrary')),
             localforage.getItem(getStorageKey('customReplyGroups')),
             localforage.getItem(getStorageKey('customPokeGroups')),
-            localforage.getItem(getStorageKey('customStatusGroups')),
-            localforage.getItem(getStorageKey('customEmojiGroups')),
+            localforage.getItem(getStorageKey('customStatusGroups'))
         ]);
         const getVal = (index) => results[index].status === 'fulfilled' ? results[index].value : null;
 
@@ -336,11 +333,7 @@ const loadData = async () => {
         const savedReplyGroups = getVal(18);
         const savedPokeGroups = getVal(19);
         const savedStatusGroups = getVal(20);
-        const savedEmojiGroups = getVal(21);   // 索引 21 对应 customEmojiGroups
-        
-        
-        if (savedEmojiGroups) window.customEmojiGroups = savedEmojiGroups;
-        
+
         if (savedPartnerPersonas) partnerPersonas = savedPartnerPersonas;
 
         if (savedSettings) Object.assign(settings, savedSettings);
@@ -430,7 +423,10 @@ const loadData = async () => {
         }
 
         try { await initMoodData(); } catch(e) { console.warn("心情数据加载失败", e); }
-        
+        // 初始化留言板（不再自动加载，由入口调用 renderEnvelopeBoard 时触发）
+        if (typeof window.renderEnvelopeBoard !== 'function') {
+            console.warn('boards.js 未加载，留言板功能不可用');
+        }        
         displayedMessageCount = HISTORY_BATCH_SIZE;
         
         setTimeout(() => {
@@ -588,7 +584,6 @@ const saveData = async () => {
         { key: 'customThemes',           val: () => localforage.setItem(`${APP_PREFIX}customThemes`, customThemes) },
         { key: 'themeSchemes',           val: () => localforage.setItem(`${APP_PREFIX}themeSchemes`, themeSchemes) },
         { key: 'chatMessages',           val: () => localforage.setItem(getStorageKey('chatMessages'), messages) },
-        { key: 'customEmojiGroups', val: () => localforage.setItem(getStorageKey('customEmojiGroups'), window.customEmojiGroups || []) }
     ];
 
     const partnerAvatarSrc = (() => {
@@ -1690,102 +1685,282 @@ if (!isBatchMode && type === 'normal') {
                 ? messages.filter(m => m.sender === 'user' && m.text).slice(-10)
                 : [];
         
-            // ========== 字卡组合模式（开启时混合单条与组合） ==========
-            // 当组合模式开启时，有概率触发组合，否则回退到逐条模式
-            if (settings.phraseCombiningEnabled && Math.random() < 0.3) {
-                showTypingIndicator();
-                // 80% 概率取 2 条，20% 概率取 3 条
-                const combineCount = Math.random() < 0.8 ? 2 : 3;
-                const shuffled = [...replyPoolOnce].sort(() => Math.random() - 0.5);
-                const selected = shuffled.slice(0, combineCount);
-                let combinedText = selected.join('，');
-                if (combinedText.slice(-1) === '，') {
-                    combinedText = combinedText.slice(0, -1) + (Math.random() < 0.5 ? '！' : '。');
-                }
-                let finalText = combinedText;
-            
-                let separateEmoji = null;
-                if (customEmojis && customEmojis.length > 0 && Math.random() < 0.2) {
-                    const emoji = customEmojis[Math.floor(Math.random() * customEmojis.length)];
-                    if (settings.emojiMixEnabled !== false) {
-                        finalText = Math.random() < 0.5 ? emoji + ' ' + finalText : finalText + ' ' + emoji;
-                    } else {
-                        separateEmoji = emoji;
-                    }
-                }
-            
-                const quoted = (Math.random() < 0.3 && recentUserMsgs.length > 0)
-                    ? (function() { const m = recentUserMsgs[Math.floor(Math.random() * recentUserMsgs.length)]; return { id: m.id, text: m.text, sender: m.sender }; })()
-                    : null;
-            
-                addMessage({
-                    id: Date.now(),
-                    sender: settings.partnerName || '对方',
-                    text: finalText,
-                    timestamp: new Date(),
-                    status: 'received',
-                    favorited: false,
-                    note: null,
-                    replyTo: quoted,
-                    type: 'normal'
-                });
-                if (typeof window._sendPartnerNotification === 'function') {
-                    window._sendPartnerNotification(settings.partnerName || '对方', finalText);
-                }
-                playSound('message');
-            
-                if (separateEmoji) {
-                    setTimeout(() => {
-                        addMessage({
-                            id: Date.now() + 1000,
-                            sender: settings.partnerName || '对方',
-                            text: separateEmoji,
-                            timestamp: new Date(),
-                            status: 'received',
-                            type: 'normal'
-                        });
-                        playSound('message');
-                    }, 300 + Math.random() * 400);
-                }
-            
-                let disabledStickerItems = new Set();
-                try { const raw = localStorage.getItem('disabledStickerItems'); if (raw) disabledStickerItems = new Set(JSON.parse(raw)); } catch(e) {}
-                const enabledStickerPool = (stickerLibrary || []).filter(s => !disabledStickerItems.has(s));
-                if (enabledStickerPool.length > 0 && Math.random() < 0.2) {
-                    const randomSticker = enabledStickerPool[Math.floor(Math.random() * enabledStickerPool.length)];
-                    setTimeout(() => {
-                        addMessage({
-                            id: Date.now() + 2000,
-                            sender: settings.partnerName || '对方',
-                            text: '',
-                            timestamp: new Date(),
-                            image: randomSticker,
-                            status: 'received',
-                            type: 'normal'
-                        });
-                        playSound('message');
-                        if (typeof window._sendPartnerNotification === 'function') {
-                            window._sendPartnerNotification(settings.partnerName || '对方', '[表情]');
-                        }
-                    }, 400 + Math.random() * 600);
-                }
-            
-                (function(){
-                    try { if (window._typingIndicatorAutoHideTimer) { clearTimeout(window._typingIndicatorAutoHideTimer); window._typingIndicatorAutoHideTimer = null; } } catch(e) {}
-                    var _tiW = document.getElementById('typing-indicator-wrapper');
-                    if (_tiW) {
-                        var _tiInner = _tiW.querySelector('.typing-indicator');
-                        if (_tiInner) {
-                            _tiInner.classList.add('hiding');
-                            setTimeout(function() { _tiW.style.display = 'none'; if (_tiInner) _tiInner.classList.remove('hiding'); }, 240);
-                        } else { _tiW.style.display = 'none'; }
-                    }
+            // ========== 字卡组合模式（开启时按概率决定是否组合） ==========
+            if (settings.phraseCombiningEnabled) {
+                // 获取可用字卡池（已屏蔽的分组/单条字卡会被排除）
+                const disabledItemsOnce = (() => {
+                    try {
+                        const raw = localStorage.getItem('disabledReplyItems');
+                        return raw ? new Set(JSON.parse(raw)) : new Set();
+                    } catch (e) { return new Set(); }
                 })();
+                const disabledGroupItemsOnce = new Set();
+                (window.customReplyGroups || []).forEach(g => {
+                    if (g.disabled && Array.isArray(g.items)) g.items.forEach(item => disabledGroupItemsOnce.add(item));
+                });
+                let replyPoolOnce = customReplies
+                    .filter(r => !disabledItemsOnce.has(r) && !disabledGroupItemsOnce.has(r))
+                    .map(r => String(r || '').trim())
+                    .filter(Boolean);
             
+                // 字卡池为空时的提示
+                if (!replyPoolOnce.length) {
+                    showNotification('回复库可用内容为空（可能被分组禁用或屏蔽），请到「自定义回复」中调整', 'info', 4000);
+                    return;
+                }
+            
+                // 获取最近的几条用户消息（用于引用回复）
+                const recentUserMsgs = settings.replyEnabled
+                    ? messages.filter(m => m.sender === 'user' && m.text).slice(-10)
+                    : [];
+            
+                // 显示“正在输入”指示器
+                if (settings.typingIndicatorEnabled) {
+                    const tiWrapper = document.getElementById('typing-indicator-wrapper');
+                    const tiLabel = document.getElementById('typing-indicator-label');
+                    const tiAvatar = document.getElementById('typing-indicator-avatar');
+                    if (tiLabel) tiLabel.textContent = (settings.partnerName || '对方') + ' 正在输入';
+                    if (tiWrapper) { positionTypingIndicator(); tiWrapper.style.display = 'block'; }
+                    if (tiAvatar) {
+                        const partnerImg = DOMElements.partner.avatar.querySelector('img');
+                        tiAvatar.innerHTML = partnerImg ? `<img src="${partnerImg.src}">` : '<i class="fas fa-user"></i>';
+                    }
+                    DOMElements.chatContainer.scrollTop = DOMElements.chatContainer.scrollHeight;
+                }
+            
+                // 决定是否触发组合模式（30%概率）
+                const shouldCombine = Math.random() < 0.3;
+            
+                if (shouldCombine) {
+                    // ---------- 组合模式 ----------
+                    // 确定组合数量：80%概率2条，20%概率3条
+                    let combineCount = Math.random() < 0.8 ? 2 : 3;
+                    // 若字卡池数量不足组合所需，则降级为逐条模式（走下面的 else）
+                    if (replyPoolOnce.length < combineCount) {
+                        // 降级处理：使用全部可用字卡（不再输出警告）
+                        combineCount = replyPoolOnce.length;
+                    }            
+                    
+                    // 从字卡池中随机抽取 combineCount 个不重复字卡
+                    const shuffled = [...replyPoolOnce];
+                    for (let i = shuffled.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                    }
+                    const selected = shuffled.slice(0, combineCount);
+                    let finalText = selected.join(' ');       // 用空格连接
+            
+                    // 表情混入处理（同原有逻辑）
+                    let separateEmoji = null;
+                    if (customEmojis && customEmojis.length > 0 && Math.random() < 0.2) {
+                        const emoji = customEmojis[Math.floor(Math.random() * customEmojis.length)];
+                        if (settings.emojiMixEnabled !== false) {
+                            finalText = Math.random() < 0.5 ? emoji + ' ' + finalText : finalText + ' ' + emoji;
+                        } else {
+                            separateEmoji = emoji;
+                        }
+                    }
+            
+                    // 引用回复（概率 0.3）
+                    const quoted = (Math.random() < 0.3 && recentUserMsgs.length > 0)
+                        ? (() => { const m = recentUserMsgs[Math.floor(Math.random() * recentUserMsgs.length)]; return { id: m.id, text: m.text, sender: m.sender }; })()
+                        : null;
+            
+                    // 发送组合消息
+                    addMessage({
+                        id: Date.now(),
+                        sender: settings.partnerName || '对方',
+                        text: finalText,
+                        timestamp: new Date(),
+                        status: 'received',
+                        favorited: false,
+                        note: null,
+                        replyTo: quoted,
+                        type: 'normal'
+                    });
+                    if (typeof window._sendPartnerNotification === 'function') {
+                        window._sendPartnerNotification(settings.partnerName || '对方', finalText);
+                    }
+                    playSound('message');
+            
+                    // 单独表情（如果未混入且 emojiMixEnabled == false）
+                    if (separateEmoji) {
+                        setTimeout(() => {
+                            addMessage({
+                                id: Date.now() + 1000,
+                                sender: settings.partnerName || '对方',
+                                text: separateEmoji,
+                                timestamp: new Date(),
+                                status: 'received',
+                                favorited: false,
+                                note: null,
+                                type: 'normal'
+                            });
+                            playSound('message');
+                        }, 300 + Math.random() * 400);
+                    }
+            
+                    // 贴纸发送（概率 0.2）
+                    let disabledStickerItems = new Set();
+                    try {
+                        const raw = localStorage.getItem('disabledStickerItems');
+                        if (raw) disabledStickerItems = new Set(JSON.parse(raw));
+                    } catch (e) {}
+                    const enabledStickerPool = (stickerLibrary || []).filter(s => !disabledStickerItems.has(s));
+                    const shouldSendSticker = enabledStickerPool.length > 0 && Math.random() < 0.2;
+                    if (shouldSendSticker) {
+                        const randomSticker = enabledStickerPool[Math.floor(Math.random() * enabledStickerPool.length)];
+                        setTimeout(() => {
+                            addMessage({
+                                id: Date.now() + 2000,
+                                sender: settings.partnerName || '对方',
+                                text: '',
+                                timestamp: new Date(),
+                                image: randomSticker,
+                                status: 'received',
+                                favorited: false,
+                                note: null,
+                                type: 'normal'
+                            });
+                            playSound('message');
+                            if (typeof window._sendPartnerNotification === 'function') {
+                                window._sendPartnerNotification(settings.partnerName || '对方', '[表情]');
+                            }
+                        }, 400 + Math.random() * 600);
+                    }
+                } else {
+                    // ---------- 逐条回复模式（与 phraseCombiningEnabled 关闭时完全一致） ----------
+                    const replyCount = Math.random() < 0.75 ? 1 : (Math.random() < 0.95 ? 2 : 3);
+                    let delay = 0;
+                    for (let i = 0; i < replyCount; i++) {
+                        const delayRange = settings.replyDelayMax - settings.replyDelayMin;
+                        delay += settings.replyDelayMin + Math.random() * delayRange;
+                        setTimeout(() => {
+                            try {
+                                let replyText = '';
+                                for (let t = 0; t < 6; t++) {
+                                    const picked = replyPoolOnce[Math.floor(Math.random() * replyPoolOnce.length)];
+                                    if (picked && String(picked).trim()) {
+                                        replyText = String(picked).trim();
+                                        break;
+                                    }
+                                }
+                                if (!replyText && i === replyCount - 1) {
+                                    (function(){
+                                        try{if(window._typingIndicatorAutoHideTimer){clearTimeout(window._typingIndicatorAutoHideTimer);window._typingIndicatorAutoHideTimer=null;}}catch(e){}
+                                        var _tiW=document.getElementById('typing-indicator-wrapper');
+                                        if(_tiW){
+                                            var _tiInner=_tiW.querySelector('.typing-indicator');
+                                            if(_tiInner){_tiInner.classList.add('hiding');setTimeout(function(){_tiW.style.display='none';if(_tiInner)_tiInner.classList.remove('hiding');},240);}
+                                            else{_tiW.style.display='none';}
+                                        }
+                                    })();
+                                    return;
+                                }
+            
+                                let disabledStickerItems = new Set();
+                                try {
+                                    const raw = localStorage.getItem('disabledStickerItems');
+                                    if (raw) disabledStickerItems = new Set(JSON.parse(raw));
+                                } catch (e) {}
+                                const enabledStickerPool = (stickerLibrary || []).filter(s => !disabledStickerItems.has(s));
+                                const shouldSendSticker = enabledStickerPool.length > 0 && Math.random() < 0.2;
+            
+                                let finalText = replyText;
+                                let separateEmoji = null;
+                                if (customEmojis && customEmojis.length > 0 && Math.random() < 0.2) {
+                                    const emoji = customEmojis[Math.floor(Math.random() * customEmojis.length)];
+                                    if (settings.emojiMixEnabled !== false) {
+                                        finalText = Math.random() < 0.5 ? emoji + ' ' + replyText : replyText + ' ' + emoji;
+                                    } else {
+                                        separateEmoji = emoji;
+                                    }
+                                }
+            
+                                addMessage({
+                                    id: Date.now() + i,
+                                    sender: settings.partnerName || '对方',
+                                    text: finalText,
+                                    timestamp: new Date(),
+                                    status: 'received',
+                                    favorited: false,
+                                    note: null,
+                                    replyTo: (i === 0 && recentUserMsgs.length > 0 && Math.random() < 0.3)
+                                        ? (function(){ const m = recentUserMsgs[Math.floor(Math.random() * recentUserMsgs.length)]; return { id: m.id, text: m.text, sender: m.sender }; })()
+                                        : null,
+                                    type: 'normal'
+                                });
+                                if (typeof window._sendPartnerNotification === 'function') {
+                                    window._sendPartnerNotification(settings.partnerName || '对方', finalText);
+                                }
+                                playSound('message');
+            
+                                if (shouldSendSticker) {
+                                    const randomSticker = enabledStickerPool[Math.floor(Math.random() * enabledStickerPool.length)];
+                                    setTimeout(() => {
+                                        addMessage({
+                                            id: Date.now() + i + 2000,
+                                            sender: settings.partnerName || '对方',
+                                            text: '',
+                                            timestamp: new Date(),
+                                            image: randomSticker,
+                                            status: 'received',
+                                            favorited: false,
+                                            note: null,
+                                            type: 'normal'
+                                        });
+                                        playSound('message');
+                                        if (typeof window._sendPartnerNotification === 'function') {
+                                            window._sendPartnerNotification(settings.partnerName || '对方', '[表情]');
+                                        }
+                                    }, 400 + Math.random() * 600);
+                                }
+            
+                                if (separateEmoji) {
+                                    setTimeout(() => {
+                                        addMessage({
+                                            id: Date.now() + i + 1000,
+                                            sender: settings.partnerName || '对方',
+                                            text: separateEmoji,
+                                            timestamp: new Date(),
+                                            status: 'received',
+                                            favorited: false,
+                                            note: null,
+                                            type: 'normal'
+                                        });
+                                        playSound('message');
+                                    }, 300 + Math.random() * 400);
+                                }
+            
+                                if (i === replyCount - 1) {
+                                    (function(){
+                                        try{if(window._typingIndicatorAutoHideTimer){clearTimeout(window._typingIndicatorAutoHideTimer);window._typingIndicatorAutoHideTimer=null;}}catch(e){}
+                                        var _tiW=document.getElementById('typing-indicator-wrapper');
+                                        if(_tiW){
+                                            var _tiInner=_tiW.querySelector('.typing-indicator');
+                                            if(_tiInner){_tiInner.classList.add('hiding');setTimeout(function(){_tiW.style.display='none';if(_tiInner)_tiInner.classList.remove('hiding');},240);}
+                                            else{_tiW.style.display='none';}
+                                        }
+                                    })();
+                                }
+                            } catch (e) {
+                                console.error('[simulateReply] 逐条回复出错:', e);
+                                try{
+                                    (function(){
+                                        try{if(window._typingIndicatorAutoHideTimer){clearTimeout(window._typingIndicatorAutoHideTimer);window._typingIndicatorAutoHideTimer=null;}}catch(e2){}
+                                        var _tiW2=document.getElementById('typing-indicator-wrapper');
+                                        if(_tiW2)_tiW2.style.display='none';
+                                    })();
+                                }catch(e2){}
+                            }
+                        }, delay);
+                    }
+                }
+            
+                // 隐藏“正在输入”指示器（由上面内部定时器处理，此处无需重复）
                 scheduleAutoSend();
                 return;
-            }            
-            
+            }        
             // ========== 原有逐条回复模式（phraseCombiningEnabled === false） ==========
             const replyCount = Math.random() < 0.75 ? 1 : (Math.random() < 0.95 ? 2 : 3);
             showTypingIndicator();
