@@ -315,6 +315,87 @@
             </div>
         </div>
     </div>
+    
+<!-- 留言板列表（新样式） -->
+<div id="envelope-board-modal" class="modal">
+    <div class="modal-content" id="board-v2-list-container" style="padding:0; overflow:hidden; background:transparent;">
+        <div class="board-wrapper" style="background:var(--secondary-bg); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; max-height:88vh;">
+            
+            <!-- 顶部标题栏（简洁） -->
+            <div class="board-header" style="padding:18px 20px 10px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-thumbtack" style="font-size:14px; color:var(--accent-color);"></i>
+                    <span style="font-weight:600; font-size:16px;">留言板</span>
+                </div>
+                <button class="board-close-btn" id="board-list-close-btn" style="background:var(--primary-bg); border:1px solid var(--border-color); border-radius:50%; width:32px; height:32px; cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- 选项卡栏（env-tab-bar 风格） -->
+            <div class="env-tab-bar" id="board-tab-area" style="display:flex; gap:8px; padding:12px 20px; border-bottom:1px solid var(--border-color);"></div>
+
+            <!-- 列表内容区（固定高度，滚动） -->
+            <div class="board-body" id="board-list-body" style="flex:1; overflow-y:auto; padding:14px 16px;"></div>
+
+            <!-- 底部按钮（仅“写新留言”可见） -->
+            <div class="board-footer" id="board-list-footer" style="padding:14px 16px; border-top:1px solid var(--border-color);">
+                <button class="modal-btn modal-btn-primary" id="board-new-post-btn" style="width:100%; justify-content:center;"><i class="fas fa-plus"></i> 写新留言</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 留言板详情 -->
+<div id="board-detail-modal" class="modal">
+    <div class="modal-content" id="board-v2-detail-container">
+        <div class="board-detail-wrapper">
+            <div class="board-detail-header">
+                <button class="board-detail-back" id="board-detail-back-btn"><i class="fas fa-arrow-left"></i></button>
+                <div class="board-detail-title">留言详情</div>
+                <div class="board-detail-actions">
+                <button class="board-detail-action-btn" id="board-global-edit-btn" title="全部编辑"><i class="fas fa-pen"></i></button>
+                <button class="board-detail-action-btn delete" id="board-delete-thread-btn"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="board-paper">
+            <div class="board-paper-top-line"></div>
+            <div class="board-paper-content" id="board-detail-body"></div>
+                <div id="board-edit-actions-bar" style="display:none; margin-top:24px; padding-top:16px; border-top:1px dashed var(--border-color); gap:10px; justify-content:flex-end; display:none;">
+                    <button class="board-compose-btn cancel" id="board-edit-cancel-btn">取消</button>
+                    <button class="board-compose-btn send" id="board-edit-save-btn">保存</button>
+                </div>
+                <div class="board-detail-date" id="board-detail-date"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 留言板撰写 -->
+<div id="board-compose-modal" class="modal">
+  <div class="modal-content" id="board-v2-compose-container">
+    <div class="board-compose-wrapper">
+      <div class="board-compose-header">
+        <div class="board-compose-title"><i class="fas fa-pen-fancy"></i><span id="board-compose-title-text">写新留言</span></div>
+        <button class="board-compose-close" id="board-compose-close-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="board-compose-paper">
+        <textarea id="bv2-compose-text" placeholder="写下你的碎碎念..." style="background:transparent!important;border:none!important;outline:none!important;font-family:var(--font-family)!important;font-size:14px!important;line-height:29px!important;color:var(--text-primary)!important;width:100%;resize:none;padding:14px 16px 14px 50px;min-height:180px;position:relative;z-index:1;"></textarea>
+      </div>
+      <div style="padding:0 16px 10px;display:flex;justify-content:space-between;align-items:center;">
+        <label style="cursor:pointer;color:var(--text-secondary);font-size:18px;">
+          <i class="fas fa-image"></i>
+          <input type="file" accept="image/*" id="bv2-compose-img-input" style="display:none;">
+          <input type="file" accept="image/*" id="bv2-detail-img-input" style="display:none;">
+        </label>
+        <span id="bv2-img-hint" style="font-size:11px;color:var(--accent-color);display:none;">已选图片</span>
+      </div>
+      <div class="board-compose-footer">
+        <button class="board-compose-btn cancel" id="board-compose-cancel-btn">取消</button>
+        <button class="board-compose-btn send" id="board-compose-send-btn">发布</button>
+      </div>
+    </div>
+  </div>
+</div>    
+    
 <div class="modal" id="envelope-modal">
     <div class="modal-content" style="max-height:92vh; padding:0; overflow:hidden; background:transparent;">
     <div class="env-wrapper">
@@ -443,103 +524,6 @@
     </div>
     </div>
 </div>
-
-<!-- 留言板列表 -->
-<div id="envelope-board-modal" class="modal">
-    <div class="modal-content" id="board-v2-list-container">
-        <div class="board-wrapper">
-            <div class="board-header" style="justify-content: space-between; align-items: center;">
-                <div style="display:flex; align-items:center; gap:6px; flex-shrink: 0;">
-                    <i class="fas fa-thumbtack" style="font-size: 14px; color: var(--accent-color);"></i>
-                    <span style="font-weight: 600; font-size: 15px;">留言板</span>
-                </div>
-                <div id="board-tab-area"></div>
-                <div style="display:flex; align-items:center; gap:10px; flex-shrink: 0;">
-                    <button class="board-close-btn" id="board-list-close-btn"><i class="fas fa-times"></i></button>
-                </div>
-            </div>
-            <div class="board-body" id="board-list-body" style="padding: 14px 16px;"></div>
-            <div class="board-footer" id="board-list-footer">
-                <div class="modal-buttons">
-                    <button class="modal-btn modal-btn-secondary" id="back-advanced" onclick="(function(){hideModal(document.getElementById('envelope-board-modal'));showModal(document.getElementById('advanced-modal'))})()">
-                        <i class="fas fa-arrow-left"></i> 返回
-                    </button>
-                    <button class="modal-btn modal-btn-primary" id="board-new-post-btn" style="flex: 1; justify-content:center;"><i class="fas fa-plus"></i> 写新留言</button>
-                    <button class="modal-btn modal-btn-secondary" id="close-custom-replies">关闭</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 留言板详情 -->
-<div id="board-detail-modal" class="modal">
-    <div class="modal-content" id="board-v2-detail-container">
-        <div class="board-detail-wrapper">
-            <div class="board-detail-header">
-                <button class="board-detail-back" id="board-detail-back-btn"><i class="fas fa-arrow-left"></i></button>
-                <div class="board-detail-title">留言详情</div>
-                <div class="board-detail-actions">
-                <button class="board-detail-action-btn" id="board-global-edit-btn" title="全部编辑"><i class="fas fa-pen"></i></button>
-                <button class="board-detail-action-btn delete" id="board-delete-thread-btn"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-            <div class="board-paper">
-            <div class="board-paper-top-line"></div>
-            <div class="board-paper-content" id="board-detail-body"></div>
-                <div id="board-edit-actions-bar" style="display:none; margin-top:24px; padding-top:16px; border-top:1px dashed var(--border-color); gap:10px; justify-content:flex-end; display:none;">
-                    <button class="board-compose-btn cancel" id="board-edit-cancel-btn">取消</button>
-                    <button class="board-compose-btn send" id="board-edit-save-btn">保存</button>
-                </div>
-                <div class="board-detail-date" id="board-detail-date"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 留言板撰写 -->
-<div id="board-compose-modal" class="modal">
-  <div class="modal-content" id="board-v2-compose-container">
-    <div class="board-compose-wrapper">
-      <div class="board-compose-header">
-        <div class="board-compose-title"><i class="fas fa-pen-fancy"></i><span id="board-compose-title-text">写新留言</span></div>
-        <button class="board-compose-close" id="board-compose-close-btn"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="board-compose-paper">
-        <textarea id="bv2-compose-text" placeholder="写下你的碎碎念..." style="background:transparent!important;border:none!important;outline:none!important;font-family:var(--font-family)!important;font-size:14px!important;line-height:29px!important;color:var(--text-primary)!important;width:100%;resize:none;padding:14px 16px 14px 50px;min-height:180px;position:relative;z-index:1;"></textarea>
-      </div>
-      <div style="padding:0 16px 10px;display:flex;justify-content:space-between;align-items:center;">
-        <label style="cursor:pointer;color:var(--text-secondary);font-size:18px;">
-          <i class="fas fa-image"></i>
-          <input type="file" accept="image/*" id="bv2-compose-img-input" style="display:none;">
-          <input type="file" accept="image/*" id="bv2-detail-img-input" style="display:none;">
-        </label>
-        <span id="bv2-img-hint" style="font-size:11px;color:var(--accent-color);display:none;">已选图片</span>
-      </div>
-      <div class="board-compose-footer">
-        <button class="board-compose-btn cancel" id="board-compose-cancel-btn">取消</button>
-        <button class="board-compose-btn send" id="board-compose-send-btn">发布</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 图片编辑选择框 -->
-<div id="board-img-action-modal" class="modal" style="align-items: center;">
-  <div style="background:var(--primary-bg); border-radius:16px; padding:24px; width:min(300px, 85vw); box-shadow: 0 10px 40px rgba(0,0,0,0.3); border:1px solid var(--border-color); text-align:center;">
-    <p style="margin:0 0 20px 0; font-size:15px; font-weight:600; color:var(--text-primary); font-family:var(--font-family);">选择图片操作</p>
-    <div style="display:flex; gap:12px; justify-content:center;">
-      <button id="board-img-replace-action" style="flex:1; padding:10px; border:none; border-radius:10px; background:var(--accent-color); color:#fff; font-size:14px; font-weight:600; cursor:pointer; font-family:var(--font-family);">替换图片</button>
-      <button id="board-img-delete-action" style="flex:1; padding:10px; border:1px solid #ff4757; border-radius:10px; background:transparent; color:#ff4757; font-size:14px; font-weight:600; cursor:pointer; font-family:var(--font-family);">删除图片</button>
-    </div>
-    <button id="board-img-action-cancel" style="margin-top:16px; background:none; border:none; color:var(--text-secondary); font-size:13px; cursor:pointer; font-family:var(--font-family);">取消</button>
-  </div>
-</div>
-
-<!-- 隐藏的文件选择器(给详情页替换用) -->
-<input type="file" accept="image/*" id="bv2-detail-img-input" style="display:none;">
-
-
 <div class="modal" id="group-chat-modal">
     <div class="modal-content">
         <div class="modal-title">
@@ -1165,25 +1149,18 @@
                                 <span class="cs-slider-val" id="auto-send-value">5分钟</span>
                             </div>
                         </div>
-                        <!-- 在 index.html 的 cs-panel-rhythm 面板中，auto-send-toggle 所在卡片内，
-                             auto-send-control 的 </div> 之后、消息节奏 cs-group-label 之前插入： -->
-                        <div class="setting-pill-row" id="board-auto-post-toggle" style="border-top:1px solid var(--border-color);">
-                            <span class="setting-pill-icon"><i class="fas fa-sticky-note"></i></span>
-                            <span class="setting-pill-label">主动留言</span>
-                            <div class="setting-pill-switch"><div class="setting-pill-knob"></div></div>
-                        </div>
                     </div>
 
                     <p class="cs-group-label" style="margin-top:4px;">消息节奏</p>
                     <div class="cs-card">
                         <div class="setting-pill-row" id="emoji-mix-toggle">
                             <span class="setting-pill-icon"><i class="fas fa-smile"></i></span>
-                            <span class="setting-pill-label">表情混入消息</span>
+                            <span class="setting-pill-label">表情混入消息 <span style="font-size:11px;color:var(--text-secondary);font-weight:400;">开启后表情与文字同条发送</span></span>
                             <div class="setting-pill-switch"><div class="setting-pill-knob"></div></div>
                         </div>
                         <div class="setting-pill-row" id="phrase-combining-toggle">
                             <span class="setting-pill-icon"><i class="fas fa-layer-group"></i></span>
-                            <span class="setting-pill-label">字卡组合 <span style="font-size:11px;color:var(--text-secondary);font-weight:400;">开启后从字卡库取2-3条拼接</span></span>
+                            <span class="setting-pill-label">字卡组合 <span style="font-size:11px;color:var(--text-secondary);font-weight:400;">开启后从字卡库取1-3条拼接</span></span>
                             <div class="setting-pill-switch"><div class="setting-pill-knob"></div></div>
                         </div>
                     </div>
@@ -2250,7 +2227,6 @@
     <script src="js/features/theme-editor.js"></script>
     <script src="js/features/group-chat.js"></script>
     <script src="js/features/call.js"></script>
-    <script src="js/highfunctions/boards.js"></script>
 
     <!-- == 合并模块 == -->
     <script src="js/games.js"></script> 
@@ -2258,6 +2234,7 @@
     <script src="js/data.js"></script>
     <script src="js/onboarding.js"></script> 
     <script src="js/listeners.js"></script>
+    <script src="js/boards.js"></script>   <!-- 新增 -->
     <script src="js/app.js"></script>
 </body>
 </html>
