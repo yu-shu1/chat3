@@ -188,6 +188,7 @@ function loadMoreHistory() {
                 bottomCollapseMode: false,
                 emojiMixEnabled: true,
                 phraseCombiningEnabled: false,
+                boardPartnerWriteEnabled: false,   // 主动写留言板开关
                 enterToSend: true,          // 默认回车发送
                 keepKeyboardAfterSend: false // 默认发送后不保留键盘
             };
@@ -423,20 +424,30 @@ const loadData = async () => {
         }
 
         try { await initMoodData(); } catch(e) { console.warn("心情数据加载失败", e); }
-        // 初始化留言板（不再自动加载，由入口调用 renderEnvelopeBoard 时触发）
-        if (typeof window.renderEnvelopeBoard !== 'function') {
-            console.warn('boards.js 未加载，留言板功能不可用');
-        }        
+        try { await loadEnvelopeData(); } catch(e) { console.warn("信封数据加载失败", e); }
+        
         displayedMessageCount = HISTORY_BATCH_SIZE;
         
         setTimeout(() => {
             applyAllAvatarFrames();
             scheduleAutoSend();
+            checkEnvelopeStatus(); 
             updateUI();
             if (settings.customBubbleCss) {
                 try { applyCustomBubbleCss(settings.customBubbleCss); } catch(e) {}
             }
         }, 100);
+        try {
+            if (typeof window.loadEnvelopeData === 'function') {
+                await window.loadEnvelopeData();
+            }
+            if (typeof window.checkEnvelopeStatus === 'function') {
+                window.checkEnvelopeStatus();
+                setInterval(() => window.checkEnvelopeStatus(), 60000);
+            }
+        } catch(e) {
+            console.warn('留言板初始化失败', e);
+        }    
 
     } catch (e) {
         console.error("LoadData 内部致命错误:", e);

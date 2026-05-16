@@ -178,5 +178,3 @@
                 closeBtn: document.getElementById('close-data')
             }
         };
-// 留言板数据（boards.js 会自己管理，但声明避免 undefined）
-window.boardDataV2 = window.boardDataV2 || { myThreads: [], partnerThreads: [], boardReplyPool: [], settings: {} };

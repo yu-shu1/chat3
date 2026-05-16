@@ -235,7 +235,23 @@ if (target.classList.contains('delete-btn')) {
 
 
         function initHeaderAndSettingsListeners() {
-
+        // 主动留言板开关
+            const boardWriteToggle = document.getElementById('board-partner-write-toggle');
+            if (boardWriteToggle) {
+                boardWriteToggle.classList.toggle('active', !!settings.boardPartnerWriteEnabled);
+                boardWriteToggle.addEventListener('click', () => {
+                    settings.boardPartnerWriteEnabled = !settings.boardPartnerWriteEnabled;
+                    boardWriteToggle.classList.toggle('active', settings.boardPartnerWriteEnabled);
+                    // 同步到留言板内部数据（若已加载）
+                    if (window.boardDataV2) {
+                        window.boardDataV2.settings.autoPostEnabled = settings.boardPartnerWriteEnabled;
+                        if (typeof window.setBoardDataV2 === 'function') window.setBoardDataV2(window.boardDataV2);
+                    }
+                    throttledSaveData();
+                    showNotification(`对方主动留言已${settings.boardPartnerWriteEnabled ? '开启' : '关闭'}`, 'success');
+                });
+            }
+            
             const openNameModal = (isPartner) => {
                 const modal = DOMElements.editModal;
                 showModal(modal.modal, modal.input);
@@ -1341,6 +1357,23 @@ autoSendSlider.addEventListener('change', () => {
     throttledSaveData();
 });
 
+const boardWriteToggle = document.getElementById('board-partner-write-toggle');
+if (boardWriteToggle) {
+    boardWriteToggle.addEventListener('click', () => {
+        settings.boardPartnerWriteEnabled = !settings.boardPartnerWriteEnabled;
+        boardWriteToggle.classList.toggle('active', settings.boardPartnerWriteEnabled);
+        
+        // 同步到留言板内部的 autoPostEnabled
+        if (window.boardDataV2) {
+            window.boardDataV2.settings.autoPostEnabled = settings.boardPartnerWriteEnabled;
+            window.setBoardDataV2(window.boardDataV2);
+        }
+        
+        throttledSaveData();
+        showNotification(`主动写留言板已${settings.boardPartnerWriteEnabled ? '开启' : '关闭'}`, 'success');
+    });
+}
+
             const resetBgBtn = document.getElementById('reset-default-bg');
             if (resetBgBtn) {
                 resetBgBtn.addEventListener('click', () => {
@@ -1374,13 +1407,12 @@ autoSendSlider.addEventListener('change', () => {
                 envelopeEntryBtn.addEventListener('click', async () => {
                     hideModal(DOMElements.advancedModal.modal);
                     if (typeof window.renderEnvelopeBoard === 'function') {
-                        await window.renderEnvelopeBoard();  // 新版留言板
+                        await window.renderEnvelopeBoard();
                     } else {
-                        console.error('boards.js 未正确加载');
-                        showNotification('留言板功能加载失败', 'error');
+                        showNotification('留言板模块未加载', 'error');
                     }
                 });
-            }
+            }            
             const galleryBanner = document.getElementById('gallery-banner-entry');
             if (galleryBanner) {
                 galleryBanner.addEventListener('click', () => {
@@ -1393,6 +1425,10 @@ autoSendSlider.addEventListener('change', () => {
             const _sendEnvEl = document.getElementById('send-envelope');
             if (_sendEnvEl) _sendEnvEl.addEventListener('click', handleSendEnvelope);
             
+            const _cancelEnvEl = document.getElementById('cancel-envelope');
+            if (_cancelEnvEl) _cancelEnvEl.addEventListener('click', () => {
+                hideModal(document.getElementById('envelope-modal'));
+            });
             const closeFortune = document.getElementById('close-fortune');
             if (closeFortune) {
                 closeFortune.addEventListener('click', () => {
