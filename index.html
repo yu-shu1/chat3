@@ -316,29 +316,38 @@
         </div>
     </div>
     
-<!-- 留言板列表（新样式） -->
+<!-- 留言板列表 -->
 <div id="envelope-board-modal" class="modal">
-    <div class="modal-content" id="board-v2-list-container" style="padding:0; overflow:hidden; background:transparent;">
-        <div class="board-wrapper" style="background:var(--secondary-bg); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; max-height:88vh;">
-            
-            <!-- 顶部标题栏（简洁） -->
-            <div class="board-header" style="padding:18px 20px 10px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <i class="fas fa-thumbtack" style="font-size:14px; color:var(--accent-color);"></i>
-                    <span style="font-weight:600; font-size:16px;">留言板</span>
+    <div class="modal-content" id="board-v2-list-container">
+        <div class="board-wrapper">
+            <div class="board-header" style="justify-content: space-between; align-items: center;">
+                <div style="display:flex; align-items:center; gap:6px; flex-shrink: 0;">
+                    <i class="fas fa-thumbtack" style="font-size: 14px; color: var(--accent-color);"></i>
+                    <span style="font-weight: 600; font-size: 15px;">留言板</span>
                 </div>
-                <button class="board-close-btn" id="board-list-close-btn" style="background:var(--primary-bg); border:1px solid var(--border-color); border-radius:50%; width:32px; height:32px; cursor:pointer;"><i class="fas fa-times"></i></button>
+                <div id="board-tab-area"></div>
+                <div style="display:flex; align-items:center; gap:10px; flex-shrink: 0;">
+                    <button class="board-close-btn" id="board-list-close-btn"><i class="fas fa-times"></i></button>
+                </div>
             </div>
-
-            <!-- 选项卡栏（env-tab-bar 风格） -->
-            <div class="env-tab-bar" id="board-tab-area" style="display:flex; gap:8px; padding:12px 20px; border-bottom:1px solid var(--border-color);"></div>
-
-            <!-- 列表内容区（固定高度，滚动） -->
-            <div class="board-body" id="board-list-body" style="flex:1; overflow-y:auto; padding:14px 16px;"></div>
-
-            <!-- 底部按钮（仅“写新留言”可见） -->
-            <div class="board-footer" id="board-list-footer" style="padding:14px 16px; border-top:1px solid var(--border-color);">
-                <button class="modal-btn modal-btn-primary" id="board-new-post-btn" style="width:100%; justify-content:center;"><i class="fas fa-plus"></i> 写新留言</button>
+            <div class="board-body" id="board-list-body" style="padding: 14px 16px;"></div>
+            <div class="board-footer" id="board-list-footer">
+                <div class="modal-buttons">
+                    <button class="modal-btn modal-btn-secondary" id="back-advanced" onclick="(function(){hideModal(document.getElementById('envelope-board-modal'));showModal(document.getElementById('advanced-modal'))})()">
+                        <i class="fas fa-arrow-left"></i> 返回
+                    </button>
+                    <button class="modal-btn modal-btn-primary" id="board-new-post-btn" style="flex: 1; justify-content:center;"><i class="fas fa-plus"></i> 写新留言</button>
+                    <!-- 多选状态栏（默认隐藏） -->
+                    <div id="board-multi-select-bar" style="flex: 1; justify-content:center;gap:8px;">
+                        <span id="board-selected-count" style="font-size:12px; color:var(--text-secondary);">已选 0 条</span>
+                        <div style="display:flex;gap:8px;">
+                            <button id="board-select-all-btn" class="board-add-btn" style="padding:6px 12px; font-size:12px;" onclick="_bv2_doMultiSelect('all')">全选</button>
+                            <button id="board-cancel-select-btn" class="board-add-btn" style="padding:6px 12px; font-size:12px; background:transparent; color:var(--text-secondary); writing-mode: horizontal-tb;" onclick="_bv2_doMultiSelect('cancel')">取消</button>
+                            <button id="board-confirm-select-btn" class="board-add-btn" style="padding:6px 12px; font-size:12px; background:var(--accent-color); color:#fff;" onclick="_bv2_doMultiSelect('confirm')">批量删除</button>
+                        </div>
+                    </div>
+                    <button class="modal-btn modal-btn-secondary" id="close-custom-replies">关闭</button>
+                </div>
             </div>
         </div>
     </div>
@@ -394,7 +403,23 @@
       </div>
     </div>
   </div>
-</div>    
+</div>
+
+<!-- 图片编辑选择框 -->
+<div id="board-img-action-modal" class="modal" style="align-items: center;">
+  <div style="background:var(--primary-bg); border-radius:16px; padding:24px; width:min(300px, 85vw); box-shadow: 0 10px 40px rgba(0,0,0,0.3); border:1px solid var(--border-color); text-align:center;">
+    <p style="margin:0 0 20px 0; font-size:15px; font-weight:600; color:var(--text-primary); font-family:var(--font-family);">选择图片操作</p>
+    <div style="display:flex; gap:12px; justify-content:center;">
+      <button id="board-img-replace-action" style="flex:1; padding:10px; border:none; border-radius:10px; background:var(--accent-color); color:#fff; font-size:14px; font-weight:600; cursor:pointer; font-family:var(--font-family);">替换图片</button>
+      <button id="board-img-delete-action" style="flex:1; padding:10px; border:1px solid #ff4757; border-radius:10px; background:transparent; color:#ff4757; font-size:14px; font-weight:600; cursor:pointer; font-family:var(--font-family);">删除图片</button>
+    </div>
+    <button id="board-img-action-cancel" style="margin-top:16px; background:none; border:none; color:var(--text-secondary); font-size:13px; cursor:pointer; font-family:var(--font-family);">取消</button>
+  </div>
+</div>
+
+<!-- 隐藏的文件选择器(给详情页替换用) -->
+<input type="file" accept="image/*" id="bv2-detail-img-input" style="display:none;">
+
     
 <div class="modal" id="envelope-modal">
     <div class="modal-content" style="max-height:92vh; padding:0; overflow:hidden; background:transparent;">
@@ -1149,6 +1174,12 @@
                                 <span class="cs-slider-val" id="auto-send-value">5分钟</span>
                             </div>
                         </div>
+                        <!-- 原有内容 ... -->
+                        <div class="setting-pill-row" id="board-partner-write-toggle">
+                            <span class="setting-pill-icon"><i class="fas fa-pen"></i></span>
+                            <span class="setting-pill-label">对方主动写留言板 <span style="font-size:11px;color:var(--text-secondary);font-weight:400;">开启后梦角可能主动给你留言</span></span>
+                            <div class="setting-pill-switch"><div class="setting-pill-knob"></div></div>
+                        </div>
                     </div>
 
                     <p class="cs-group-label" style="margin-top:4px;">消息节奏</p>
@@ -1410,7 +1441,7 @@
                         <i class="fas fa-calendar-day"></i><span>心晴手账</span>
                     </div>
                     <div class="settings-item" id="envelope-function">
-                        <i class="fas fa-envelope"></i><span>信封投递</span>
+                        <i class="fas fa-envelope"></i><span>留言板</span>
                     </div>
                 </div>
             </div>
@@ -2214,6 +2245,7 @@
 
 <div id="dg-editor-modal" style="display:none;"></div>
     <!-- == 核心层 == -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/backup-engine.js"></script>
@@ -2222,6 +2254,8 @@
 
     <!-- == 功能模块 == -->
     <script src="js/features/mood.js"></script>
+    <script src="js/features/envelope.js"></script>
+    <script src="js/features/boards.js"></script>
     <script src="js/features/reply-library.js"></script>
     <script src="js/features/theme-editor.js"></script>
     <script src="js/features/group-chat.js"></script>
@@ -2233,7 +2267,6 @@
     <script src="js/data.js"></script>
     <script src="js/onboarding.js"></script> 
     <script src="js/listeners.js"></script>
-    <script src="js/boards.js"></script>   <!-- 新增 -->
     <script src="js/app.js"></script>
 </body>
 </html>
