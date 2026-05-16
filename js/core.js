@@ -422,9 +422,20 @@ const loadData = async () => {
                 localforage.setItem(getStorageKey('chatBackground'), lsBg);
             }
         }
-
-        try { await initMoodData(); } catch(e) { console.warn("心情数据加载失败", e); }
-        try { await loadEnvelopeData(); } catch(e) { console.warn("信封数据加载失败", e); }
+        
+        // 在 loadData 函数内部，settings 初始化之后，添加：
+        if (typeof partnerPersonas === 'undefined') window.partnerPersonas = [];
+        
+        try {
+            await initMoodData();
+        } catch(e) {
+            console.warn("心情数据加载失败", e);
+        }
+        try {
+            await loadEnvelopeData();
+        } catch(e) {
+            console.warn("信封数据加载失败", e);
+        }        
         
         displayedMessageCount = HISTORY_BATCH_SIZE;
         
@@ -2601,7 +2612,12 @@ window.initializeSession = async function() {
     } else {
         SESSION_ID = await createNewSession(false);
     }
-
+    
+    if (!SESSION_ID) {
+        console.error("SESSION_ID 仍然为空，使用临时 ID");
+        SESSION_ID = 'temp_' + Date.now();
+    }
+    
     await localforage.setItem(`${APP_PREFIX}lastSessionId`, SESSION_ID);
 }
 

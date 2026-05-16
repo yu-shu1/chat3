@@ -34,6 +34,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.warn('LocalForage 未加载，将使用 localStorage 降级方案');
         }
 
+        try { 
+            if (typeof setupEventListeners === 'function') setupEventListeners(); 
+        } catch(e) { 
+            console.error('setupEventListeners 执行失败:', e); 
+        }
+        
         try {
             const emergencyBackupRaw = localStorage.getItem('BACKUP_V1_critical');
             if (emergencyBackupRaw) {

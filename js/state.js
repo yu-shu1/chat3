@@ -41,6 +41,7 @@
         let currentAnniversaryType = 'anniversary';
         let customThemes = [];
         let themeSchemes = []; 
+        let partnerPersonas = [];          // 对方人格/角色数据
         const DOMElements = {
             html: document.documentElement,
             chatContainer: document.getElementById('chat-container'),
